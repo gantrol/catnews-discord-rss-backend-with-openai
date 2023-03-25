@@ -1,9 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app import crud
-from app.database import SessionLocal
-from app.main import app
-from app.schemas import UserCreate, FeedCreate
+from main import app
 
 client = TestClient(app)
 

@@ -1,10 +1,9 @@
-import os
 from fastapi.testclient import TestClient
 import pytest
 
 from app import crud
-from app.main import app
-from app.database import SessionLocal, Base, engine
+from main import app
+from app.database import async_session, Base, engine
 from app.schemas import UserCreate, FeedCreate
 from app.utils.auth import verify_password
 
@@ -18,7 +17,7 @@ def test_app():
 @pytest.fixture(scope="module")
 def db():
     Base.metadata.create_all(bind=engine)
-    db_session = SessionLocal()
+    db_session = async_session()
     yield db_session
     db_session.close()
     Base.metadata.drop_all(bind=engine)

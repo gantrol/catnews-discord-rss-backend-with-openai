@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app import schemas, crud, token
-from app.main import app
+from app import crud
+from main import app
 from app.utils.auth import verify_password
 
 client = TestClient(app)
