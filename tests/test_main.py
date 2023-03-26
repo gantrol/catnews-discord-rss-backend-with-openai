@@ -1,14 +1,14 @@
 from typing import List
 
-import pytest
-import respx
-from fastapi import status, Depends
-from sqlalchemy.orm import Session
+from fastapi import status
 
-from app import schemas, crud
-from app.database import get_db
+from app import schemas
 
 # TODO: local utils function test?
+# import respx
+# with open("assets/hackernews.xml", "rb") as rss_file:
+#     rss_content = rss_file.read()
+# respx.get(EXAMPLE_RSS_URL).mock(return_value=respx.MockResponse(content=rss_content))
 EXAMPLE_RSS_URL = "https://rsshub.app/hackernews"
 
 
@@ -47,9 +47,8 @@ def test_add_subscription(test_app, access_token):
 
 def test_list_subscriptions(test_app, access_token):
     headers = {"Authorization": f"Bearer {access_token}"}
-
     response = test_app.get("/feeds", headers=headers)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     assert isinstance(response.json(), List)
     assert len(response.json()) > 0
 
