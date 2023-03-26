@@ -1,15 +1,40 @@
-import bcrypt
-from fastapi import Depends
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app import models, schemas
 from datetime import datetime, timedelta
 import feedparser
 
-from app.database import get_db
 from app.schemas import UserCreate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def update_feed_articles(feed: models.Feed, db: Session):
+    parsed_feed = feedparser.parse(feed.url)
+    for entry in parsed_feed.entries:
+        db_article = db.query(models.Article).filter(models.Article.url == entry.link).first()
+        if db_article is None:
+            db_article = models.Article(
+                title=entry.title,
+                url=entry.link,
+                content=entry.summary,
+                published_at=entry.published_parsed,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            db.add(db_article)
+            db.commit()
+            db.refresh(db_article)
+
+            feed_article = models.FeedArticle(
+                feed_id=feed.id,
+                article_id=db_article.id,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            db.add(feed_article)
+            db.commit()
+            db.refresh(feed_article)
 
 
 def get_password_hash(password: str) -> str:
@@ -50,6 +75,21 @@ def get_user_by_github_id(github_id: str, db: Session) -> models.User:
 
 def get_user_by_discord_id(discord_id: str, db: Session) -> models.User:
     return db.query(models.User).filter(models.User.discord_id == discord_id).first()
+
+
+def create_user(user: schemas.UserCreate, db: Session) -> models.User:
+    hashed_password = pwd_context.hash(user.password)
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        password_hash=hashed_password,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 def create_user_with_discord(user_data: dict, token: dict, db: Session) -> models.User:
@@ -115,7 +155,7 @@ def subscribe_to_feed(feed: schemas.FeedCreate, user: models.User, db: Session):
     return db_feed
 
 
-def unsubscribe_from_feed(feed: schemas.FeedCreate, user: models.User, db: Session):
+def unsubscribe_from_feed(feed: schemas.FeedRemove, user: models.User, db: Session):
     db_feed = db.query(models.Feed).filter(models.Feed.url == feed.url).first()
     if db_feed is not None:
         subscription = db.query(models.UserFeedSubscription).filter(models.UserFeedSubscription.user_id == user.id,
@@ -133,18 +173,25 @@ def list_subscribed_feeds(user: models.User, db: Session):
     return subscriptions
 
 
-def get_feed_articles(user: models.User, db: Session):
+def get_feed_articles(user: models.User, db: Session, skip: int = 0, limit: int = 20):
     feeds = list_subscribed_feeds(user, db)
     articles = []
     for feed in feeds:
-        feed_articles = db.query(models.Article).join(models.FeedArticle).filter(
-            models.FeedArticle.feed_id == feed.id).all()
+        update_feed_articles(feed, db)
+        feed_articles = (
+            db.query(models.Article)
+            .join(models.FeedArticle)
+            .filter(models.FeedArticle.feed_id == feed.id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
         articles.extend(feed_articles)
     return articles
 
 
 def authenticate_user(email: str, password: str, db: Session):
     user = get_user_by_email(email, db)
-    if user and pwd_context.verify(password, user.password):
+    if user and pwd_context.verify(password, user.password_hash):
         return user
     return None

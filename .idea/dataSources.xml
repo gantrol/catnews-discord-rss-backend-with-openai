@@ -8,11 +8,35 @@
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/tests/rss_test.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="app" uuid="24142d5f-67f9-443d-a5f6-a4cbbd1acf03">
+    <data-source source="LOCAL" name="catAI" uuid="2ae8d444-de8f-4a60-a990-b6ccd0a167c8">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\50196\PycharmProjects\CatAI\rss_backend\app.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\50196\PycharmProjects\CatAI\rss_backend\catAI.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.40.1/sqlite-jdbc-3.40.1.jar</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="catAI [2]" uuid="4a85d0eb-ec7c-4ab5-b772-0cec63f7d3e3">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\50196\PycharmProjects\CatAI\rss_backend\tests\catAI.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.40.1/sqlite-jdbc-3.40.1.jar</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="test" uuid="982ad512-4e84-43cb-8fea-9a8c0c1e078a">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\50196\PycharmProjects\CatAI\rss_backend\tests\test.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>

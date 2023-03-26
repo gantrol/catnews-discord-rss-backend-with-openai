@@ -9,8 +9,12 @@ class FeedBase(BaseModel):
     url: str
 
 
-class FeedCreate(FeedBase):
-    pass
+class FeedCreate(BaseModel):
+    url: str
+
+
+class FeedRemove(BaseModel):
+    url: str
 
 
 class Feed(FeedBase):
