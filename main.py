@@ -12,7 +12,7 @@ from starlette.responses import RedirectResponse
 from app import crud, models, schemas
 from app.crud import authenticate_user
 from app.database import create_access_token, get_db, engine, get_current_user
-from app.schemas import UserCreate, Token
+from app.schemas import UserCreate, Token, Feed
 
 SCOPE = ["identify", "email", "guilds.join", "guilds.members.read"]
 
@@ -126,10 +126,11 @@ async def auth_github_callback(code: str):
     return {"user_data": user_data, "token": token}
 
 
-@app.post("/feeds", status_code=status.HTTP_201_CREATED)
+@app.post("/feeds", status_code=status.HTTP_201_CREATED, response_model=Feed)
 async def add_subscription(feed: schemas.FeedCreate, current_user: models.User = Depends(get_current_user),
                            db: Session = Depends(get_db)):
     subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
+    print(subscribed_feed)
     return subscribed_feed
 
 
@@ -153,8 +154,8 @@ async def list_subscriptions(current_user: models.User = Depends(get_current_use
 async def get_feed_articles(
         skip: int = 0, limit: int = 20, current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
-):
-    articles = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
+) -> schemas.Article:
+    articles: models.Article = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
     return articles
 
 

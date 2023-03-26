@@ -19,6 +19,8 @@ class FeedRemove(BaseModel):
 
 class Feed(FeedBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True
@@ -28,7 +30,7 @@ class ArticleBase(BaseModel):
     title: str
     url: str
     content: Optional[str]
-    published_at: str
+    published_at: datetime
 
 
 class ArticleCreate(ArticleBase):
@@ -37,6 +39,8 @@ class ArticleCreate(ArticleBase):
 
 class Article(ArticleBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True

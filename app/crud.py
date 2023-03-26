@@ -4,7 +4,9 @@ from app import models, schemas
 from datetime import datetime, timedelta
 import feedparser
 
+from app.models import Article
 from app.schemas import UserCreate
+from app.utils.dateutils import date_from_string
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -18,7 +20,7 @@ def update_feed_articles(feed: models.Feed, db: Session):
                 title=entry.title,
                 url=entry.link,
                 content=entry.summary,
-                published_at=entry.published_parsed,
+                published_at=date_from_string(entry.published),
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
             )
@@ -173,7 +175,7 @@ def list_subscribed_feeds(user: models.User, db: Session):
     return subscriptions
 
 
-def get_feed_articles(user: models.User, db: Session, skip: int = 0, limit: int = 20):
+def get_feed_articles(user: models.User, db: Session, skip: int = 0, limit: int = 20) -> [Article]:
     feeds = list_subscribed_feeds(user, db)
     articles = []
     for feed in feeds:
@@ -195,3 +197,7 @@ def authenticate_user(email: str, password: str, db: Session):
     if user and pwd_context.verify(password, user.password_hash):
         return user
     return None
+
+
+def verify_pasword(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
