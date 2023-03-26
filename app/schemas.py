@@ -1,5 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from datetime import datetime
+
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional, Literal
 
 
 class FeedBase(BaseModel):
@@ -38,6 +40,7 @@ class Article(ArticleBase):
 
 class UserBase(BaseModel):
     username: str
+    email: EmailStr
 
 
 class UserCreate(UserBase):
@@ -46,14 +49,22 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True
 
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    token_source: Literal["Discord", "Password", "Github"]
 
 
 class TokenData(BaseModel):

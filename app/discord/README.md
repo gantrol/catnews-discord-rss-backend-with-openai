@@ -1,1 +1,0 @@
-https://github.com/Tert0/fastapi-discord
