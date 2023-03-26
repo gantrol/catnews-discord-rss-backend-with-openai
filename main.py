@@ -13,15 +13,15 @@ from sqlalchemy.orm import Session
 
 from starlette.responses import RedirectResponse
 
-from app import crud
+from app import crud, models
 from app.crud import get_user_by_email, register_user, authenticate_user
-from app.database import create_access_token, get_db
+from app.database import create_access_token, get_db, engine
 from app.schemas import UserCreate, Token
 
 SCOPE = ["identify", "email", "guilds.join", "guilds.members.read"]
 
 load_dotenv()
-
+models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

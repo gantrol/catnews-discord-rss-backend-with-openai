@@ -9,20 +9,13 @@ from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
 from app import models, crud
 from app.config import settings
-from dotenv import load_dotenv
-import os
 
-
-load_dotenv()
-
-if os.environ.get("TESTING"):
-    load_dotenv(".env.test")
 
 # JWT Authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = settings.DATABASE_URL
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
