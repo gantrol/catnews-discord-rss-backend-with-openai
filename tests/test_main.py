@@ -37,7 +37,6 @@ def test_login(test_app):
 def test_add_subscription(test_app, access_token):
     headers = {"Authorization": f"Bearer {access_token}"}
     feed_data = {"url": EXAMPLE_RSS_URL}
-
     response = test_app.post("/feeds", json=feed_data, headers=headers)
     assert response.status_code == status.HTTP_201_CREATED
     print(response.text)
@@ -48,7 +47,7 @@ def test_add_subscription(test_app, access_token):
 def test_list_subscriptions(test_app, access_token):
     headers = {"Authorization": f"Bearer {access_token}"}
     response = test_app.get("/feeds", headers=headers)
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_200_OK
     assert isinstance(response.json(), List)
     assert len(response.json()) > 0
 
