@@ -18,3 +18,4 @@ aiosqlite
 requests
 requests-oauthlib
 pydantic[email]
+python-multipart
