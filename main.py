@@ -39,6 +39,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# TODO: 没有密码（其他OAuth2途径来的）……
 @app.post("/token", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -131,6 +132,7 @@ async def auth_github_callback(code: str):
     )
     user_data = github.get("https://api.github.com/user").json()
     return {"user_data": user_data, "token": token}
+
 
 
 if __name__ == "__main__":
