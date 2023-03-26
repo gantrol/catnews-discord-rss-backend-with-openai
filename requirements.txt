@@ -17,3 +17,4 @@ alembic~=1.8.1
 aiosqlite
 requests
 requests-oauthlib
+pydantic[email]
