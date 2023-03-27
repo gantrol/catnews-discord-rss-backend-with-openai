@@ -21,9 +21,15 @@ COMMAND_PREFIX = "/"
 bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 
-@bot.command(name="sub", help=f"Subscribes by url. Usage: {COMMAND_PREFIX}sub <url>")
+@bot.command(name="sub", help=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
 async def sub(ctx, url: str):
     # TODO: 更精细的异常处理
+    """
+
+    :param ctx:
+    :param url: the url you want to subscribe
+    :return:
+    """
     async def func(db, current_user):
         try:
             feed = FeedCreate(url=url)
@@ -40,8 +46,14 @@ async def sub(ctx, url: str):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="unsub", help=f"Unsubscribes by url. Usage: {COMMAND_PREFIX}unsub <url>")
+@bot.command(name="unsub", help=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
 async def unsub(ctx, url: str):
+    """
+
+    :param ctx:
+    :param url: the url you want to subscribe
+    :return:
+    """
     async def func(db, current_user):
         try:
             feed = FeedRemove(url=url)
@@ -58,7 +70,7 @@ async def unsub(ctx, url: str):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="list", help=f"list all subscriptions. Usage: {COMMAND_PREFIX}list")
+@bot.command(name="list", help=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
 async def list_subs(ctx):
     async def func(db, current_user):
         subscriptions = crud.list_subscribed_feeds(current_user, db)
@@ -73,8 +85,14 @@ async def list_subs(ctx):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="news", help="get news by page number. Usage: /news or /news <page_number>")
+@bot.command(name="news", help="get news by page number. Usage: `/news` or `/news <page_number>`")
 async def get_news(ctx, page=1):
+    """
+
+    :param ctx:
+    :param page: the page numbers of news
+    :return:
+    """
     # TODO: 对接AI？
     # TODO: discord显示卡片有点烦人？
     # TODO: check discord.ext.commands.errors.CommandInvokeError: Command raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
