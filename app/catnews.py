@@ -60,18 +60,22 @@ async def list_subs(ctx):
 
 
 @bot.command(name="news")
-async def get_news(ctx):
+async def get_news(ctx, page=1):
     # TODO: 对接AI？
     # TODO: discord显示卡片有点烦人？
     # TODO: check discord.ext.commands.errors.CommandInvokeError: Command raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
     #    In content: Must be 2000 or fewer in length.
+    limit = 10
+    skip = 10 * (page - 1)
+
     def func(db, current_user):
         try:
-            articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=0, limit=10)
+            articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
             if articles:
                 message = "Latest articles:\n"
                 for article in articles:
-                    message += f"- {article.title} ({article.url})\n"
+                    await ctx.send(f"- {article.title} ({article.url})")
+                await ctx.send(f"Page {page} finished")
             else:
                 message = "No articles found."
         except Exception as e:
