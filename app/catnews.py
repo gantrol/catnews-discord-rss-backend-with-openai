@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from app import crud, models
 from app.database import get_db
-from app.schemas import FeedCreate
+from app.schemas import FeedCreate, FeedRemove
 
 load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
@@ -16,22 +16,20 @@ intents.message_content = True
 intents.typing = False
 intents.presences = False
 
-bot = commands.Bot(command_prefix="/", intents=intents)
+COMMAND_PREFIX = "/"
+
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 
-@bot.command(name="sub")
+@bot.command(name="sub", help=f"Subscribes by url. Usage: {COMMAND_PREFIX}sub <url>")
 async def sub(ctx, url: str):
-    if not url:
-        await ctx.send("Check again. Usage: sub <url>")
-        return
-
     # TODO: 更精细的异常处理
     async def func(db, current_user):
         try:
             feed = FeedCreate(url=url)
             subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
             if subscribed_feed:
-                message = f"Subscribed to {url}"
+                message = f"Subscribed to {subscribed_feed.url}"
             else:
                 message = f"Error subscribing to {url} for empty"
         except Exception as e:
@@ -42,7 +40,25 @@ async def sub(ctx, url: str):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="list")
+@bot.command(name="unsub", help=f"Unsubscribes by url. Usage: {COMMAND_PREFIX}unsub <url>")
+async def unsub(ctx, url: str):
+    async def func(db, current_user):
+        try:
+            feed = FeedRemove(url=url)
+            unsubscribed_feed = crud.unsubscribe_from_feed(feed, current_user, db)
+            if unsubscribed_feed:
+                message = f"Unsubscribed to {unsubscribed_feed.url}"
+            else:
+                message = f"Error unsubscribing to {url} for empty"
+        except Exception as e:
+            logging.error(f"Error unsubscribing to {url}: {e}")
+            message = f"Error unsubscribing to {url}: {str(e)}"
+        await ctx.send(message)
+
+    await login_check_helper(ctx, func)
+
+
+@bot.command(name="list", help=f"list all subscriptions. Usage: {COMMAND_PREFIX}list")
 async def list_subs(ctx):
     async def func(db, current_user):
         subscriptions = crud.list_subscribed_feeds(current_user, db)
@@ -57,14 +73,14 @@ async def list_subs(ctx):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="news")
+@bot.command(name="news", help="get news by page number. Usage: /news or /news <page_number>")
 async def get_news(ctx, page=1):
     # TODO: 对接AI？
     # TODO: discord显示卡片有点烦人？
     # TODO: check discord.ext.commands.errors.CommandInvokeError: Command raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
     #    In content: Must be 2000 or fewer in length.
-    limit = 10
-    skip = 10 * (page - 1)
+    limit = 3
+    skip = limit * (page - 1)
 
     async def func(db, current_user):
         try:
@@ -82,6 +98,15 @@ async def get_news(ctx, page=1):
             await ctx.send(message)
 
     await login_check_helper(ctx, func)
+
+
+@bot.command(name="usage", help="Displays the usage information for all commands")
+async def usage(ctx):
+    usage_message = "**Bot Usage:**\n\n"
+    for command in bot.commands:
+        if command.help is not None:
+            usage_message += f"`{bot.command_prefix}{command.name}` - {command.help}\n"
+    await ctx.send(usage_message)
 
 
 async def login_check_helper(ctx, func):
