@@ -26,7 +26,7 @@ async def sub(ctx, url: str):
         return
 
     # TODO: 更精细的异常处理
-    def func(db, current_user):
+    async def func(db, current_user):
         try:
             feed = FeedCreate(url=url)
             subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
@@ -37,15 +37,14 @@ async def sub(ctx, url: str):
         except Exception as e:
             logging.error(f"Error subscribing to {url}: {e}")
             message = f"Error subscribing to {url}: {str(e)}"
-        return message
+        await ctx.send(message)
 
-    message = login_check_helper(ctx, func)
-    await ctx.send(message)
+    await login_check_helper(ctx, func)
 
 
 @bot.command(name="list")
 async def list_subs(ctx):
-    def func(db, current_user):
+    async def func(db, current_user):
         subscriptions = crud.list_subscribed_feeds(current_user, db)
         if subscriptions:
             message = "Your subscriptions:\n"
@@ -53,10 +52,9 @@ async def list_subs(ctx):
                 message += f"- {subscription.title} ({subscription.url})\n"
         else:
             message = "You have no subscriptions."
-        return message
+        await ctx.send(message)
 
-    message = login_check_helper(ctx, func)
-    await ctx.send(message)
+    await login_check_helper(ctx, func)
 
 
 @bot.command(name="news")
@@ -68,31 +66,30 @@ async def get_news(ctx, page=1):
     limit = 10
     skip = 10 * (page - 1)
 
-    def func(db, current_user):
+    async def func(db, current_user):
         try:
             articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
             if articles:
-                message = "Latest articles:\n"
                 for article in articles:
                     await ctx.send(f"- {article.title} ({article.url})")
                 await ctx.send(f"Page {page} finished")
             else:
                 message = "No articles found."
+                await ctx.send(message)
         except Exception as e:
             message = "Error fetching articles."
             logging.error(e)
-        return message
+            await ctx.send(message)
 
-    message = login_check_helper(ctx, func)
-    await ctx.send(message)
+    await login_check_helper(ctx, func)
 
 
-def login_check_helper(ctx, func):
+async def login_check_helper(ctx, func):
     db = next(get_db())
     user_id = str(ctx.author.id)
     current_user = crud.get_user_by_discord_id(user_id, db)
     if current_user:
-        message = func(db, current_user)
+        message = await func(db, current_user)
     else:
         message = "Please signup with discord first. https://discord-rss-backend-production.up.railway.app/auth/discord"
     return message
