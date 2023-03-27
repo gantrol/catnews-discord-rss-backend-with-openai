@@ -14,10 +14,13 @@ from app.config import settings
 # JWT Authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 DATABASE_URL = settings.DATABASE_URL
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
 session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-# Base = declarative_base()
 
 
 def get_db():
