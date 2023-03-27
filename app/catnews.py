@@ -16,7 +16,7 @@ intents.message_content = True
 intents.typing = False
 intents.presences = False
 
-bot = commands.Bot(command_prefix=".", intents=intents)
+bot = commands.Bot(command_prefix="/", intents=intents)
 
 
 @bot.command(name="sub")
@@ -51,7 +51,7 @@ async def list_subs(ctx):
         if subscriptions:
             message = "Your subscriptions:\n"
             for subscription in subscriptions:
-                message += f"- {subscription['title']} ({subscription['url']})\n"
+                message += f"- {subscription.title} ({subscription.url})\n"
         else:
             message = "You have no subscriptions."
         return message
