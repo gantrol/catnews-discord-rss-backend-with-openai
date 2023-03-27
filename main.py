@@ -168,7 +168,7 @@ async def get_feed_articles(
         db: Session = Depends(get_db)
 ) -> [schemas.Article]:
     articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
-    return [articles]
+    return articles
 
 
 if __name__ == "__main__":
