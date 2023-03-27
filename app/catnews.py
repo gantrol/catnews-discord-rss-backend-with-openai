@@ -23,10 +23,9 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 async def sub(ctx, url: str):
     if not url:
         await ctx.send("Check again. Usage: sub <url>")
-        return 
+        return
+
     # TODO: 更精细的异常处理
-    
-    
     def func(db, current_user):
         try:
             feed = FeedCreate(url=url)
