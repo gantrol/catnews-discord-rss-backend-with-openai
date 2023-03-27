@@ -2,7 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from httpx import AsyncClient
 from app import models, schemas
 from app.database import get_db
 from main import app
@@ -42,9 +41,3 @@ def access_token(test_app):
     assert response.json()["token_type"] == "bearer"
     access_token = response.json()["access_token"]
     yield access_token
-
-
-@pytest.fixture
-def respx_fixture():
-    with respx.mock:
-        yield

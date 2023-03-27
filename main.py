@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from typing import List
@@ -10,9 +11,11 @@ from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
 from app import crud, models, schemas
+from app.catnews import bot, DISCORD_BOT_TOKEN
 from app.crud import authenticate_user
 from app.database import create_access_token, get_db, engine, get_current_user
 from app.schemas import UserCreate, Token, Feed
+import asyncio
 
 SCOPE = ["identify", "email", "guilds.join", "guilds.members.read"]
 
@@ -21,6 +24,12 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(bot.start(DISCORD_BOT_TOKEN))
+    logging.info("start bot")
 
 
 # TODO: 认证邮箱……
@@ -36,6 +45,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 # TODO: 没有密码（其他OAuth2途径来的）……
+#  确认是否能直接登录……
 @app.post("/auth/token", response_model=Token)
 async def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
@@ -62,39 +72,40 @@ async def login(
 @app.get("/auth/discord")
 async def auth_discord():
     state = secrets.token_hex(16)
-    discord = OAuth2Session(
+    discord_session = OAuth2Session(
         os.getenv("CLIENT_ID_DISCORD"),
         redirect_uri=os.getenv("REDIRECT_URI_DISCORD"),
         scope=SCOPE,
         state=state,
     )
-    authorization_url, _ = discord.authorization_url("https://discord.com/api/oauth2/authorize")
+    authorization_url, _ = discord_session.authorization_url("https://discord.com/api/oauth2/authorize")
     #     return {"url": authorization_url}
     return RedirectResponse(authorization_url)
 
 
 @app.get("/auth/discord/callback")
 async def auth_discord_callback(code: str, state: str, db: Session = Depends(get_db)):
-    discord = OAuth2Session(
+    discord_session = OAuth2Session(
         os.getenv("CLIENT_ID_DISCORD"),
         redirect_uri=os.getenv("REDIRECT_URI_DISCORD"),
         scope=SCOPE,
         state=state,
     )
-    token = discord.fetch_token(
+    token = discord_session.fetch_token(
         "https://discord.com/api/oauth2/token",
         client_secret=os.getenv("CLIENT_SECRET_DISCORD"),
         code=code,
         include_client_id=True,
     )
 
-    user_data = discord.get("https://discord.com/api/users/@me").json()
+    user_data = discord_session.get("https://discord.com/api/users/@me").json()
 
     user = crud.get_user_by_discord_id(user_data["id"], db)
     if not user:
         user = crud.create_user_with_discord(user_data, token, db)
     else:
         crud.update_discord_token(user.id, token, db)
+    #     TODO: redirect to page of inviting
     return {"user_data": user_data, "token": token}
 
 
@@ -146,6 +157,7 @@ async def remove_subscription(feed: schemas.FeedRemove, current_user: models.Use
 
 @app.get("/feeds", response_model=List[schemas.Feed])
 async def list_subscriptions(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # TODO: 分页
     subscribed_feeds = crud.list_subscribed_feeds(current_user, db)
     return subscribed_feeds
 
@@ -154,9 +166,9 @@ async def list_subscriptions(current_user: models.User = Depends(get_current_use
 async def get_feed_articles(
         skip: int = 0, limit: int = 20, current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
-) -> schemas.Article:
-    articles: models.Article = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
-    return articles
+) -> [schemas.Article]:
+    articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
+    return [articles]
 
 
 if __name__ == "__main__":
