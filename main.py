@@ -106,7 +106,8 @@ async def auth_discord_callback(code: str, state: str, db: Session = Depends(get
     else:
         crud.update_discord_token(user.id, token, db)
     #     TODO: redirect to page of inviting
-    return {"user_data": user_data, "token": token}
+    # return {"user_data": user_data, "token": token}
+    return RedirectResponse("https://discord.com/channels/1088234188186071162")
 
 
 # GitHub OAuth2
