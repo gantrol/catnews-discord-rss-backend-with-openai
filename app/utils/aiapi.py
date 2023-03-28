@@ -22,7 +22,7 @@ def generate_tags_and_summary(text: str) -> Tuple[List[str], str]:
     summary_response = openai.Completion.create(
         engine="text-davinci-003",
         prompt=f"Create a summary of the following text:\n{text}",
-        max_tokens=200,
+        max_tokens=500,
         n=1,
         stop=None,
         temperature=0.5,
