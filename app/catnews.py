@@ -110,7 +110,7 @@ async def get_news(ctx, page=1):
             articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
             if articles:
                 for article in articles:
-                    await ctx.send(f"- {article.title} ({article.url})")
+                    await ctx.send(f"- {article.title}: {article.url}")
                 await ctx.send(f"Page {page} finished")
             else:
                 message = "No articles found."

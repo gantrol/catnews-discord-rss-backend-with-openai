@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DATABASE_URL: str = os.getenv("DATABASE_URL")
+    OPEN_AI_KEY: str = os.getenv("OPEN_AI_KEY")
 
 
 settings = Settings()

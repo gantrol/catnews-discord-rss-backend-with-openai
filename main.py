@@ -142,7 +142,6 @@ async def auth_github_callback(code: str):
 async def add_subscription(feed: schemas.FeedCreate, current_user: models.User = Depends(get_current_user),
                            db: Session = Depends(get_db)):
     subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
-    print(subscribed_feed)
     return subscribed_feed
 
 
@@ -175,4 +174,4 @@ async def get_feed_articles(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
