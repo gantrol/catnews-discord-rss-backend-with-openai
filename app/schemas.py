@@ -77,3 +77,34 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+class TagBase(BaseModel):
+    name: str
+
+
+class TagCreate(TagBase):
+    pass
+
+
+class Tag(TagBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+class SummaryBase(BaseModel):
+    content: str
+
+
+class SummaryCreate(SummaryBase):
+    pass
+
+
+class Summary(SummaryBase):
+    id: int
+    article_id: int
+
+    class Config:
+        orm_mode = True

@@ -1,11 +1,13 @@
+from typing import List, Optional
+
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app import models, schemas
 from datetime import datetime, timedelta
 import feedparser
 
-from app.models import Article
-from app.schemas import UserCreate
+from app.models import Article, Tag
+from app.schemas import UserCreate, Summary
 from app.utils.dateutils import date_from_string
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -201,3 +203,37 @@ def authenticate_user(email: str, password: str, db: Session):
 
 def verify_pasword(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_or_create_tag(db: Session, tag_name: str) -> Tag:
+    tag = db.query(models.Tag).filter(models.Tag.name == tag_name).first()
+    if not tag:
+        tag = models.Tag(name=tag_name)
+        db.add(tag)
+        db.commit()
+        db.refresh(tag)
+    return tag
+
+
+def associate_tags_with_article(db: Session, article: Article, tags: List[str]):
+    for tag_name in tags:
+        tag = get_or_create_tag(db, tag_name)
+        article_tag = models.ArticleTag(article_id=article.id, tag_id=tag.id)
+        db.add(article_tag)
+    db.commit()
+
+
+def get_article_by_url(db: Session, url: str) -> Article:
+    return db.query(models.Article).filter(models.Article.url == url).first()
+
+
+def get_summary_by_article_id(db: Session, article_id: int) -> Summary:
+    return db.query(models.Summary).filter(models.Summary.article_id == article_id).first()
+
+
+def create_summary(db: Session, summary: schemas.SummaryCreate, article_id: int) -> Summary:
+    new_summary = models.Summary(**summary.dict(), article_id=article_id)
+    db.add(new_summary)
+    db.commit()
+    db.refresh(new_summary)
+    return new_summary

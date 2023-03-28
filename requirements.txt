@@ -21,3 +21,4 @@ pydantic[email]
 python-multipart
 respx
 discord.py
+openai

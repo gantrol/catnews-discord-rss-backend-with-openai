@@ -1,12 +1,15 @@
 import logging
 import os
 import discord
+from discord import Message
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from app import crud, models
+from app import crud, models, schemas
 from app.database import get_db
 from app.schemas import FeedCreate, FeedRemove
+from app.utils.aiapi import generate_tags_and_summary
+from app.utils.message import extract_url_from_message
 
 load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
@@ -30,6 +33,7 @@ async def sub(ctx, url: str):
     :param url: the url you want to subscribe
     :return:
     """
+
     async def func(db, current_user):
         try:
             feed = FeedCreate(url=url)
@@ -54,6 +58,7 @@ async def unsub(ctx, url: str):
     :param url: the url you want to subscribe
     :return:
     """
+
     async def func(db, current_user):
         try:
             feed = FeedRemove(url=url)
@@ -115,6 +120,46 @@ async def get_news(ctx, page=1):
             logging.error(e)
             await ctx.send(message)
 
+    await login_check_helper(ctx, func)
+
+
+@bot.command(name="cat",
+             help="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
+async def get_tags_and_summary(ctx: commands.Context):
+    ref_message = ctx.message.reference.resolved
+
+    if not ref_message:
+        await ctx.send("Please reply to a message containing the article URL.")
+        return
+
+    url = extract_url_from_message(ref_message)
+
+    if not url:
+        await ctx.send("No URL found in the referenced message.")
+        return
+
+    async def func(db, current_user):
+        try:
+            # TODO: check current_user private
+            article: models.Article = crud.get_article_by_url(db, url=url)
+            if article:
+                tags, summary = generate_tags_and_summary(article.content)
+
+                crud.associate_tags_with_article(db, article, tags)
+
+                summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
+                if not summary_obj:
+                    summary_create = schemas.SummaryCreate(content=summary)
+                    summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
+
+                await ctx.send(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
+            else:
+                message = "Article not found."
+                await ctx.send(message)
+        except Exception as e:
+            message = "Error fetching tags and summary."
+            logging.error(e)
+            await ctx.send(message)
     await login_check_helper(ctx, func)
 
 

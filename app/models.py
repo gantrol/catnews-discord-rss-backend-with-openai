@@ -53,6 +53,8 @@ class Article(Base):
     published_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+    tags = relationship("ArticleTag", back_populates="article")
+    summary = relationship("Summary", uselist=False, back_populates="article")
 
 
 class FeedArticle(Base):
@@ -89,3 +91,29 @@ class RequestedArticle(Base):
     updated_at = Column(DateTime, nullable=False)
 
     UniqueConstraint("user_id", "article_id")
+
+
+class Tag(Base):
+    __tablename__ = "tag"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, unique=True)
+    articles = relationship("ArticleTag", back_populates="tag")
+
+
+class ArticleTag(Base):
+    __tablename__ = "article_tag"
+
+    article_id = Column(Integer, ForeignKey("article.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tag.id"), primary_key=True)
+
+    article = relationship("Article", back_populates="tags")
+    tag = relationship("Tag", back_populates="articles")
+
+
+class Summary(Base):
+    __tablename__ = "summary"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, nullable=False)
+    article_id = Column(Integer, ForeignKey("article.id"))
