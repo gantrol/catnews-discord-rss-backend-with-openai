@@ -117,3 +117,4 @@ class Summary(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String, nullable=False)
     article_id = Column(Integer, ForeignKey("article.id"))
+    article = relationship("Article", back_populates="summary")
