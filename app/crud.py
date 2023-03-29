@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from passlib.context import CryptContext
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from app import models, schemas
 from datetime import datetime, timedelta
@@ -179,18 +180,21 @@ def list_subscribed_feeds(user: models.User, db: Session):
 
 def get_feed_articles(user: models.User, db: Session, skip: int = 0, limit: int = 20) -> [Article]:
     feeds = list_subscribed_feeds(user, db)
-    articles = []
+    feed_ids = [feed.id for feed in feeds]
+
     for feed in feeds:
         update_feed_articles(feed, db)
-        feed_articles = (
-            db.query(models.Article)
-            .join(models.FeedArticle)
-            .filter(models.FeedArticle.feed_id == feed.id)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-        articles.extend(feed_articles)
+
+    articles = (
+        db.query(models.Article)
+        .join(models.FeedArticle)
+        .filter(models.FeedArticle.feed_id.in_(feed_ids))
+        .order_by(desc(models.FeedArticle.updated_at))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
     return articles
 
 
