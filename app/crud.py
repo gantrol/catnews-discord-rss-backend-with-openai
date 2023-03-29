@@ -231,6 +231,11 @@ def get_summary_by_article_id(db: Session, article_id: int) -> Summary:
     return db.query(models.Summary).filter(models.Summary.article_id == article_id).first()
 
 
+def get_tags_by_article_id(db: Session, article_id: int) -> List[str]:
+    article_tags = db.query(models.ArticleTag).filter(models.ArticleTag.article_id == article_id).all()
+    return [article_tag.tag.name for article_tag in article_tags]
+
+
 def create_summary(db: Session, summary: schemas.SummaryCreate, article_id: int) -> Summary:
     new_summary = models.Summary(**summary.dict(), article_id=article_id)
     db.add(new_summary)

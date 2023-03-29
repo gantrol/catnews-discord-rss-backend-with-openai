@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from app import crud, models, schemas
 from app.database import get_db
 from app.schemas import FeedCreate, FeedRemove
-from app.utils.aiapi import generate_tags_and_summary
+from app.utils.aiapi import generate_tags_and_summary, generate_tags, generate_summary
 from app.utils.message import extract_url_from_message
 
 load_dotenv()
@@ -143,15 +143,15 @@ async def get_tags_and_summary(ctx: commands.Context):
             # TODO: check current_user private
             article: models.Article = crud.get_article_by_url(db, url=url)
             if article:
-                tags, summary = generate_tags_and_summary(article.content)
-
-                crud.associate_tags_with_article(db, article, tags)
-
+                tags = crud.get_tags_by_article_id(db, article_id=article.id)
                 summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
+                if not tags:
+                    tags = generate_tags(article.content)
+                    crud.associate_tags_with_article(db, article, tags)
                 if not summary_obj:
+                    summary = generate_summary(article.content)
                     summary_create = schemas.SummaryCreate(content=summary)
                     summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
-
                 await ctx.send(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
             else:
                 message = "Article not found."
