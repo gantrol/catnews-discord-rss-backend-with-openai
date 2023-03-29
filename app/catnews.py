@@ -180,7 +180,7 @@ async def login_check_helper(ctx, func) -> None:
         await func(db, current_user)
     else:
         message = "Please signup with discord first. https://discord-rss-backend-production.up.railway.app/auth/discord"
-        ctx.send(message)
+        await ctx.send(message)
     # return message
 
 
