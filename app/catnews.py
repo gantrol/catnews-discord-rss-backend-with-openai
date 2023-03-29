@@ -1,14 +1,13 @@
 import logging
 import os
 import discord
-from discord import Message
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from app import crud, models, schemas
 from app.database import get_db
 from app.schemas import FeedCreate, FeedRemove
-from app.utils.aiapi import generate_tags_and_summary, generate_tags, generate_summary
+from app.utils.aiapi import generate_tags, generate_summary
 from app.utils.message import extract_url_from_message
 
 load_dotenv()
@@ -160,6 +159,7 @@ async def get_tags_and_summary(ctx: commands.Context):
             message = "Error fetching tags and summary."
             logging.error(e)
             await ctx.send(message)
+
     await login_check_helper(ctx, func)
 
 
@@ -172,15 +172,16 @@ async def usage(ctx):
     await ctx.send(usage_message)
 
 
-async def login_check_helper(ctx, func):
+async def login_check_helper(ctx, func) -> None:
     db = next(get_db())
     user_id = str(ctx.author.id)
     current_user = crud.get_user_by_discord_id(user_id, db)
     if current_user:
-        message = await func(db, current_user)
+        await func(db, current_user)
     else:
         message = "Please signup with discord first. https://discord-rss-backend-production.up.railway.app/auth/discord"
-    return message
+        ctx.send(message)
+    # return message
 
 
 @bot.event
