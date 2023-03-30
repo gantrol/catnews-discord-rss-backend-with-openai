@@ -13,7 +13,6 @@ from app.utils.message import extract_url_from_string
 load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
 
-
 COMMAND_PREFIX = "/"
 
 COMMAND_PREFIX2 = "!"
@@ -99,8 +98,6 @@ async def get_news(ctx, page: int = 1):
     :param page: the page numbers of news
     :return:
     """
-    # TODO: 对接AI？
-    # TODO: discord显示卡片有点烦人？
     # TODO: check discord.ext.commands.errors.CommandInvokeError: Command raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
     #    In content: Must be 2000 or fewer in length.
     try:
@@ -128,8 +125,65 @@ async def get_news(ctx, page: int = 1):
     await login_check_helper(ctx, func)
 
 
+@bot.slash_command(name="cats", description="cat summaries of news by page number")
+async def get_news(ctx, page: int = 1):
+    """
+
+    :param ctx:
+    :param page: the page numbers of news
+    :return:
+    """
+    # TODO: check discord.ext.commands.errors.CommandInvokeError:
+    #    In content: Must be 2000 or fewer in length.
+    try:
+        page = int(page)
+    except Exception:
+        page = 1
+    limit = 3
+    skip = limit * (page - 1)
+
+    async def func(db, current_user):
+        try:
+            articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
+            if articles:
+                for article in articles:
+                    await ctx.send(f"{article.title}: {article.url}")
+                    try:
+                        summary_obj, tags = await handle_tag_summary(article, db)
+                        await ctx.send(
+                            f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
+                    except Exception as e:
+                        message = "Error when summaries articles."
+                        logging.error(message)
+                        logging.error(e)
+                        await ctx.respond(message)
+                await ctx.respond(f"Page {page} finished")
+            else:
+                message = "No articles found."
+                await ctx.respond(message)
+        except Exception as e:
+            message = "Error fetching articles."
+            logging.error(e)
+            await ctx.respond(message)
+
+    await login_check_helper(ctx, func)
+
+
+async def handle_tag_summary(article, db):
+    tags = crud.get_tags_by_article_id(db, article_id=article.id)
+    summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
+    if not tags:
+        tags = generate_tags(article.content)
+        crud.associate_tags_with_article(db, article, tags)
+    if not summary_obj:
+        summary = generate_summary(article.content)
+        summary_create = schemas.SummaryCreate(content=summary)
+        summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
+    return summary_obj, tags
+
+
 @bot.slash_command(name="cat",
-             description=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
+                   description=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
 async def get_tags_and_summary(ctx, url):
     ref_message = url
 
@@ -142,16 +196,9 @@ async def get_tags_and_summary(ctx, url):
                 # TODO: check current_user private
                 article: models.Article = crud.get_article_by_url(db, url=url)
                 if article:
-                    tags = crud.get_tags_by_article_id(db, article_id=article.id)
-                    summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
-                    if not tags:
-                        tags = generate_tags(article.content)
-                        crud.associate_tags_with_article(db, article, tags)
-                    if not summary_obj:
-                        summary = generate_summary(article.content)
-                        summary_create = schemas.SummaryCreate(content=summary)
-                        summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
-                    await ctx.respond(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
+                    summary_obj, tags = await handle_tag_summary(article, db)
+                    await ctx.respond(
+                        f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
                 else:
                     message = "Article should be fetch by `news` command first."
                     await ctx.respond(message)
@@ -174,6 +221,7 @@ async def login_check_helper(ctx, func) -> None:
         await ctx.respond(message)
     # return message
 
+
 async def handle_url(ctx, text) -> Optional[str]:
     url = extract_url_from_string(text)
 
@@ -181,6 +229,7 @@ async def handle_url(ctx, text) -> Optional[str]:
         await ctx.respond("No URL found in the message.")
         return
     return url
+
 
 @bot.event
 async def on_ready():
