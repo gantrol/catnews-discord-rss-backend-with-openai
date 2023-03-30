@@ -2,6 +2,7 @@ import logging
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 
 from app import crud, models, schemas
@@ -21,9 +22,10 @@ intents.presences = False
 COMMAND_PREFIX = "/"
 
 bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
+tree = app_commands.CommandTree(bot)
 
 
-@bot.command(name="sub", help=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
+@tree.command(name="sub", description=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
 async def sub(ctx, url: str):
     # TODO: 更精细的异常处理
     """
@@ -49,7 +51,7 @@ async def sub(ctx, url: str):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="unsub", help=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
+@tree.command(name="unsub", description=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
 async def unsub(ctx, url: str):
     """
 
@@ -74,7 +76,7 @@ async def unsub(ctx, url: str):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="list", help=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
+@tree.command(name="list", description=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
 async def list_subs(ctx):
     async def func(db, current_user):
         subscriptions = crud.list_subscribed_feeds(current_user, db)
@@ -89,7 +91,7 @@ async def list_subs(ctx):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="news", help="get news by page number. Usage: `/news` or `/news <page_number>`")
+@tree.command(name="news", description="get news by page number. Usage: `/news` or `/news <page_number>`")
 async def get_news(ctx, page=1):
     """
 
@@ -122,8 +124,8 @@ async def get_news(ctx, page=1):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="cat",
-             help="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
+@tree.command(name="cat",
+              description="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
 async def get_tags_and_summary(ctx: commands.Context):
     ref_message = ctx.message.reference.resolved
 
@@ -163,7 +165,7 @@ async def get_tags_and_summary(ctx: commands.Context):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="usage", help="Displays the usage information for all commands")
+@tree.command(name="usage", description="Displays the usage information for all commands")
 async def usage(ctx):
     usage_message = "**Bot Usage:**\n\n"
     for command in bot.commands:
