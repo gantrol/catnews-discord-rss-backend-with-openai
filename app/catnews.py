@@ -146,7 +146,7 @@ async def get_news(ctx, page: int = 1):
         try:
             articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
             if articles:
-                await ctx.response("Please waiting...")
+                await ctx.respond("Please waiting...")
                 for article in articles:
                     await ctx.send(f"{article.title}: {article.url}")
                     try:
