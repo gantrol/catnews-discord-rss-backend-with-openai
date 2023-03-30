@@ -146,6 +146,7 @@ async def get_news(ctx, page: int = 1):
         try:
             articles: [models.Article] = crud.get_feed_articles(current_user, db, skip=skip, limit=limit)
             if articles:
+                await ctx.response("Please waiting...")
                 for article in articles:
                     await ctx.send(f"{article.title}: {article.url}")
                     try:
@@ -156,8 +157,8 @@ async def get_news(ctx, page: int = 1):
                         message = "Error when summaries articles."
                         logging.error(message)
                         logging.error(e)
-                        await ctx.respond(message)
-                await ctx.respond(f"Page {page} finished")
+                        await ctx.send(message)
+                await ctx.send(f"Page {page} finished")
             else:
                 message = "No articles found."
                 await ctx.respond(message)
