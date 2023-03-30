@@ -29,7 +29,7 @@ async def sub(ctx, url: str):
     :param url: the url you want to subscribe
     :return:
     """
-    url = extract_url_from_string(url)
+    url = await handle_url(ctx, url)
 
     if url:
         async def func(db, current_user):
@@ -57,7 +57,7 @@ async def unsub(ctx, url: str):
     :return:
     """
 
-    url = extract_url_from_string(url)
+    url = await handle_url(ctx, url)
 
     if url:
         async def func(db, current_user):
@@ -178,7 +178,7 @@ async def handle_url(ctx, text) -> Optional[str]:
     url = extract_url_from_string(text)
 
     if not url:
-        await ctx.respond("No URL found in the referenced message.")
+        await ctx.respond("No URL found in the message.")
         return
     return url
 
