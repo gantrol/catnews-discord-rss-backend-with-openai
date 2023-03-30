@@ -123,9 +123,9 @@ async def get_news(ctx, page: int = 1):
     await login_check_helper(ctx, func)
 
 
-@bot.command(name="cat",
+@bot.slash_command(name="cat",
              help=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
-async def get_tags_and_summary(ctx):
+async def get_tags_and_summary(ctx, url):
     ref_message = ctx.message.reference.resolved
 
     if not ref_message:
@@ -154,7 +154,7 @@ async def get_tags_and_summary(ctx):
                     summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
                 await ctx.respond(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
             else:
-                message = "Article not found."
+                message = "Article should be fetch by `news` command first."
                 await ctx.respond(message)
         except Exception as e:
             message = "Error fetching tags and summary."
