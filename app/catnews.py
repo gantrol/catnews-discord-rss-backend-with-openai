@@ -124,14 +124,11 @@ async def get_news(ctx, page: int = 1):
 
 
 @bot.slash_command(name="cat",
-             help=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
+             description=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
 async def get_tags_and_summary(ctx, url):
-    ref_message = ctx.message.reference.resolved
+    ref_message = url
 
-    if not ref_message:
-        await ctx.respond("Please reply to a message containing the article URL.")
-        return
-
+    # TODO: extract check url logic for sub and unsub
     url = extract_url_from_message(ref_message)
 
     if not url:
