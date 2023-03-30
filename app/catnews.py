@@ -16,7 +16,8 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
 
 COMMAND_PREFIX = "/"
 
-bot = commands.Bot()
+COMMAND_PREFIX2 = "!"
+bot = commands.Bot(command_prefix="!")
 
 
 @bot.slash_command(name="sub", description=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
@@ -123,7 +124,7 @@ async def get_news(ctx, page: int = 1):
 
 
 @bot.command(name="cat",
-             description="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
+             help=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
 async def get_tags_and_summary(ctx):
     ref_message = ctx.message.reference.resolved
 
@@ -161,15 +162,6 @@ async def get_tags_and_summary(ctx):
             await ctx.respond(message)
 
     await login_check_helper(ctx, func)
-
-
-@bot.slash_command(name="usage", description="Displays the usage information for all commands")
-async def usage(ctx):
-    usage_message = "**Bot Usage:**\n\n"
-    for command in bot.commands:
-        if command.help is not None:
-            usage_message += f"`{bot.command_prefix}{command.name}` - {command.help}\n"
-    await ctx.respond(usage_message)
 
 
 async def login_check_helper(ctx, func) -> None:
