@@ -2,7 +2,6 @@ import logging
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
 from dotenv import load_dotenv
 
 from app import crud, models, schemas
@@ -14,18 +13,13 @@ from app.utils.message import extract_url_from_message
 load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.typing = False
-intents.presences = False
 
 COMMAND_PREFIX = "/"
 
-bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
-tree = app_commands.CommandTree(bot)
+bot = commands.Bot()
 
 
-@tree.command(name="sub", description=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
+@bot.slash_command(name="sub", description=f"Subscribes by url. Usage: `{COMMAND_PREFIX}sub <url>`")
 async def sub(ctx, url: str):
     # TODO: 更精细的异常处理
     """
@@ -46,12 +40,12 @@ async def sub(ctx, url: str):
         except Exception as e:
             logging.error(f"Error subscribing to {url}: {e}")
             message = f"Error subscribing to {url}: {str(e)}"
-        await ctx.send(message)
+        await ctx.respond(message)
 
     await login_check_helper(ctx, func)
 
 
-@tree.command(name="unsub", description=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
+@bot.slash_command(name="unsub", description=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
 async def unsub(ctx, url: str):
     """
 
@@ -71,12 +65,12 @@ async def unsub(ctx, url: str):
         except Exception as e:
             logging.error(f"Error unsubscribing to {url}: {e}")
             message = f"Error unsubscribing to {url}: {str(e)}"
-        await ctx.send(message)
+        await ctx.respond(message)
 
     await login_check_helper(ctx, func)
 
 
-@tree.command(name="list", description=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
+@bot.slash_command(name="list", description=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
 async def list_subs(ctx):
     async def func(db, current_user):
         subscriptions = crud.list_subscribed_feeds(current_user, db)
@@ -86,13 +80,13 @@ async def list_subs(ctx):
                 message += f"- {subscription.title} ({subscription.url})\n"
         else:
             message = "You have no subscriptions."
-        await ctx.send(message)
+        await ctx.respond(message)
 
     await login_check_helper(ctx, func)
 
 
-@tree.command(name="news", description="get news by page number. Usage: `/news` or `/news <page_number>`")
-async def get_news(ctx, page=1):
+@bot.slash_command(name="news", description="get news by page number. Usage: `/news` or `/news <page_number>`")
+async def get_news(ctx, page: int = 1):
     """
 
     :param ctx:
@@ -103,6 +97,10 @@ async def get_news(ctx, page=1):
     # TODO: discord显示卡片有点烦人？
     # TODO: check discord.ext.commands.errors.CommandInvokeError: Command raised an exception: HTTPException: 400 Bad Request (error code: 50035): Invalid Form Body
     #    In content: Must be 2000 or fewer in length.
+    try:
+        page = int(page)
+    except Exception:
+        page = 1
     limit = 3
     skip = limit * (page - 1)
 
@@ -112,31 +110,31 @@ async def get_news(ctx, page=1):
             if articles:
                 for article in articles:
                     await ctx.send(f"- {article.title}: {article.url}")
-                await ctx.send(f"Page {page} finished")
+                await ctx.respond(f"Page {page} finished")
             else:
                 message = "No articles found."
-                await ctx.send(message)
+                await ctx.respond(message)
         except Exception as e:
             message = "Error fetching articles."
             logging.error(e)
-            await ctx.send(message)
+            await ctx.respond(message)
 
     await login_check_helper(ctx, func)
 
 
-@tree.command(name="cat",
-              description="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
+@bot.slash_command(name="cat",
+             description="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
 async def get_tags_and_summary(ctx: commands.Context):
     ref_message = ctx.message.reference.resolved
 
     if not ref_message:
-        await ctx.send("Please reply to a message containing the article URL.")
+        await ctx.respond("Please reply to a message containing the article URL.")
         return
 
     url = extract_url_from_message(ref_message)
 
     if not url:
-        await ctx.send("No URL found in the referenced message.")
+        await ctx.respond("No URL found in the referenced message.")
         return
 
     async def func(db, current_user):
@@ -153,25 +151,25 @@ async def get_tags_and_summary(ctx: commands.Context):
                     summary = generate_summary(article.content)
                     summary_create = schemas.SummaryCreate(content=summary)
                     summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
-                await ctx.send(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
+                await ctx.respond(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
             else:
                 message = "Article not found."
-                await ctx.send(message)
+                await ctx.respond(message)
         except Exception as e:
             message = "Error fetching tags and summary."
             logging.error(e)
-            await ctx.send(message)
+            await ctx.respond(message)
 
     await login_check_helper(ctx, func)
 
 
-@tree.command(name="usage", description="Displays the usage information for all commands")
+@bot.slash_command(name="usage", description="Displays the usage information for all commands")
 async def usage(ctx):
     usage_message = "**Bot Usage:**\n\n"
     for command in bot.commands:
         if command.help is not None:
             usage_message += f"`{bot.command_prefix}{command.name}` - {command.help}\n"
-    await ctx.send(usage_message)
+    await ctx.respond(usage_message)
 
 
 async def login_check_helper(ctx, func) -> None:
@@ -182,7 +180,7 @@ async def login_check_helper(ctx, func) -> None:
         await func(db, current_user)
     else:
         message = "Please signup with discord first. https://discord-rss-backend-production.up.railway.app/auth/discord"
-        await ctx.send(message)
+        await ctx.respond(message)
     # return message
 
 

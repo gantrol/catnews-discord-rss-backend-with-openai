@@ -20,5 +20,5 @@ requests-oauthlib
 pydantic[email]
 python-multipart
 respx
-discord.py
+py-cord
 openai
