@@ -182,8 +182,9 @@ async def handle_tag_summary(article, db):
     return summary_obj, tags
 
 
+# TODO: Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.
 @bot.slash_command(name="cat",
-                   description=f"get tags and summary of an article. Usage: `{COMMAND_PREFIX2}cat` and reply to a message containing the article URL.")
+                   description=f"get tags and summary of an article.")
 async def get_tags_and_summary(ctx, url):
     ref_message = url
 
