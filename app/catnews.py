@@ -3,12 +3,12 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-
+from typing import Optional
 from app import crud, models, schemas
 from app.database import get_db
 from app.schemas import FeedCreate, FeedRemove
 from app.utils.aiapi import generate_tags, generate_summary
-from app.utils.message import extract_url_from_message
+from app.utils.message import extract_url_from_string
 
 load_dotenv()
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_API")
@@ -29,21 +29,23 @@ async def sub(ctx, url: str):
     :param url: the url you want to subscribe
     :return:
     """
+    url = extract_url_from_string(url)
 
-    async def func(db, current_user):
-        try:
-            feed = FeedCreate(url=url)
-            subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
-            if subscribed_feed:
-                message = f"Subscribed to {subscribed_feed.url}"
-            else:
-                message = f"Error subscribing to {url} for empty"
-        except Exception as e:
-            logging.error(f"Error subscribing to {url}: {e}")
-            message = f"Error subscribing to {url}: {str(e)}"
-        await ctx.respond(message)
+    if url:
+        async def func(db, current_user):
+            try:
+                feed = FeedCreate(url=url)
+                subscribed_feed = crud.subscribe_to_feed(feed, current_user, db)
+                if subscribed_feed:
+                    message = f"Subscribed to {subscribed_feed.url}"
+                else:
+                    message = f"Error subscribing to {url} for empty"
+            except Exception as e:
+                logging.error(f"Error subscribing to {url}: {e}")
+                message = f"Error subscribing to {url}: {str(e)}"
+            await ctx.respond(message)
 
-    await login_check_helper(ctx, func)
+        await login_check_helper(ctx, func)
 
 
 @bot.slash_command(name="unsub", description=f"Unsubscribes by url. Usage: `{COMMAND_PREFIX}unsub <url>`")
@@ -55,20 +57,23 @@ async def unsub(ctx, url: str):
     :return:
     """
 
-    async def func(db, current_user):
-        try:
-            feed = FeedRemove(url=url)
-            unsubscribed_feed = crud.unsubscribe_from_feed(feed, current_user, db)
-            if unsubscribed_feed:
-                message = f"Unsubscribed to {unsubscribed_feed.url}"
-            else:
-                message = f"Error unsubscribing to {url} for empty"
-        except Exception as e:
-            logging.error(f"Error unsubscribing to {url}: {e}")
-            message = f"Error unsubscribing to {url}: {str(e)}"
-        await ctx.respond(message)
+    url = extract_url_from_string(url)
 
-    await login_check_helper(ctx, func)
+    if url:
+        async def func(db, current_user):
+            try:
+                feed = FeedRemove(url=url)
+                unsubscribed_feed = crud.unsubscribe_from_feed(feed, current_user, db)
+                if unsubscribed_feed:
+                    message = f"Unsubscribed to {unsubscribed_feed.url}"
+                else:
+                    message = f"Error unsubscribing to {url} for empty"
+            except Exception as e:
+                logging.error(f"Error unsubscribing to {url}: {e}")
+                message = f"Error unsubscribing to {url}: {str(e)}"
+            await ctx.respond(message)
+
+        await login_check_helper(ctx, func)
 
 
 @bot.slash_command(name="list", description=f"list all subscriptions. Usage: `{COMMAND_PREFIX}list`")
@@ -129,36 +134,33 @@ async def get_tags_and_summary(ctx, url):
     ref_message = url
 
     # TODO: extract check url logic for sub and unsub
-    url = extract_url_from_message(ref_message)
+    url = extract_url_from_string(ref_message)
 
-    if not url:
-        await ctx.respond("No URL found in the referenced message.")
-        return
-
-    async def func(db, current_user):
-        try:
-            # TODO: check current_user private
-            article: models.Article = crud.get_article_by_url(db, url=url)
-            if article:
-                tags = crud.get_tags_by_article_id(db, article_id=article.id)
-                summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
-                if not tags:
-                    tags = generate_tags(article.content)
-                    crud.associate_tags_with_article(db, article, tags)
-                if not summary_obj:
-                    summary = generate_summary(article.content)
-                    summary_create = schemas.SummaryCreate(content=summary)
-                    summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
-                await ctx.respond(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
-            else:
-                message = "Article should be fetch by `news` command first."
+    if url:
+        async def func(db, current_user):
+            try:
+                # TODO: check current_user private
+                article: models.Article = crud.get_article_by_url(db, url=url)
+                if article:
+                    tags = crud.get_tags_by_article_id(db, article_id=article.id)
+                    summary_obj = crud.get_summary_by_article_id(db, article_id=article.id)
+                    if not tags:
+                        tags = generate_tags(article.content)
+                        crud.associate_tags_with_article(db, article, tags)
+                    if not summary_obj:
+                        summary = generate_summary(article.content)
+                        summary_create = schemas.SummaryCreate(content=summary)
+                        summary_obj = crud.create_summary(db, summary_create, article_id=article.id)
+                    await ctx.respond(f"Title: {article.title}\n\nTags: {', '.join(tags)}\n\nSummary: {summary_obj.content}")
+                else:
+                    message = "Article should be fetch by `news` command first."
+                    await ctx.respond(message)
+            except Exception as e:
+                message = "Error fetching tags and summary."
+                logging.error(e)
                 await ctx.respond(message)
-        except Exception as e:
-            message = "Error fetching tags and summary."
-            logging.error(e)
-            await ctx.respond(message)
 
-    await login_check_helper(ctx, func)
+        await login_check_helper(ctx, func)
 
 
 async def login_check_helper(ctx, func) -> None:
@@ -172,6 +174,13 @@ async def login_check_helper(ctx, func) -> None:
         await ctx.respond(message)
     # return message
 
+async def handle_url(ctx, text) -> Optional[str]:
+    url = extract_url_from_string(text)
+
+    if not url:
+        await ctx.respond("No URL found in the referenced message.")
+        return
+    return url
 
 @bot.event
 async def on_ready():
