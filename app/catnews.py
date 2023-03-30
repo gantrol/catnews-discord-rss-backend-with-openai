@@ -122,9 +122,9 @@ async def get_news(ctx, page: int = 1):
     await login_check_helper(ctx, func)
 
 
-@bot.slash_command(name="cat",
+@bot.command(name="cat",
              description="get tags and summary of an article. Usage: `/cat` and reply to a message containing the article URL.")
-async def get_tags_and_summary(ctx: commands.Context):
+async def get_tags_and_summary(ctx):
     ref_message = ctx.message.reference.resolved
 
     if not ref_message:
