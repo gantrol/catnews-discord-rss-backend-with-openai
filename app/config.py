@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     OPEN_AI_KEY: str = os.getenv("OPEN_AI_KEY")
+    DISCORD_REDIRECT_URL: str = os.getenv("DISCORD_REDIRECT_URL")
 
 
 settings = Settings()

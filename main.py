@@ -12,6 +12,7 @@ from starlette.responses import RedirectResponse
 
 from app import crud, models, schemas
 from app.catnews import bot, DISCORD_BOT_TOKEN
+from app.config import Settings
 from app.crud import authenticate_user
 from app.database import create_access_token, get_db, engine, get_current_user
 from app.schemas import UserCreate, Token, Feed
@@ -30,6 +31,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 async def startup_event():
     asyncio.create_task(bot.start(DISCORD_BOT_TOKEN))
     logging.info("start bot")
+
+
+@app.get("/")
+async def hello():
+    return 'Hello'
 
 
 # TODO: 认证邮箱……
@@ -105,9 +111,7 @@ async def auth_discord_callback(code: str, state: str, db: Session = Depends(get
         user = crud.create_user_with_discord(user_data, token, db)
     else:
         crud.update_discord_token(user.id, token, db)
-    #     TODO: redirect to page of inviting
-    # return {"user_data": user_data, "token": token}
-    return RedirectResponse("https://discord.com/channels/1088234188186071162")
+    return RedirectResponse(Settings.DISCORD_REDIRECT_URL)
 
 
 # GitHub OAuth2

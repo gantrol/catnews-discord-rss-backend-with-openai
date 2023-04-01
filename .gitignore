@@ -3,3 +3,4 @@
 **/*.db
 ./discord/
 __pycache__/
+*.mp4

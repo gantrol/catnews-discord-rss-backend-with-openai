@@ -1,0 +1,2 @@
+python -m alembic revision --autogenerate -m "Add summary and tags tables"
+python -m alembic upgrade head
