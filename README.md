@@ -6,9 +6,17 @@ This is a Discord bot with an RSS RESTful backend integrated with the OpenAI API
 
 "cat" means getting summaries and tags of news. "cats" means getting a list of them.
 
+Over 95% of the code was written by AI.
+
+### On desktop
+
 ![cats.png](./assets/cats.png)
 
-Over 95% of the code was written by AI.
+
+### On mobile phone
+
+https://user-images.githubusercontent.com/31330732/229291245-4fb6f37f-a455-4af8-a70d-19ac670d03f4.mp4
+
 
 ### Login with Discord
 
